@@ -987,9 +987,9 @@ export class ScrumboardComponent implements OnInit {
   }
 
   drop(event: CdkDragDrop<string[]>) {
-    this.to_id = event.container.id;
+    this.to_id = event.container.id[event.container.id.length-1];
     this.goal_id = 'm' + event.item.data.goalID;
-    let from_id = event.previousContainer.id
+    let from_id = event.previousContainer.id[event.previousContainer.id.length-1];
     let goal_for = event.item.data.taskFor
     if (this.loggedUserRole == "Owner" || this.loggedUserRole == "Admin" || this.loggedUserRole == "Quality Analyst" || goal_for == this.addToUser) {
       if (event.previousContainer === event.container) {
@@ -1002,6 +1002,25 @@ export class ScrumboardComponent implements OnInit {
       } else {
         if (this.to_id == '2' && from_id != '3') {
           this.push_id_form();
+        } else if (goal_for != event.container.id.slice(0, event.container.id.indexOf('e')) && this.loggedUserRole == "Owner" || this.loggedUserRole == "Admin" || this.loggedUserRole == "Quality Analyst") {
+          this.dataService.changeGoalOwner(this.goal_id, 'u'+event.container.id.slice(0, event.container.id.indexOf('e')), this.project_id).subscribe(
+            data => {
+              this.NotificationBox(data['message']);
+              this.users = [];
+              this.TFTD = [];
+              this.TFTW = [];
+              this.done = [];
+              this.verify = [];
+              this.filterUsers(data['data']);
+
+            },
+            error => {
+              console.log(error)
+              this.NotificationBox('Unexpected error!, please try move the task again.')
+            }
+          )
+          event.item.data['taskFor'] = event.container.id.slice(0, event.container.id.indexOf('e'));
+
         } else {
           this.processMoveGoalRequest();
         }
@@ -1013,18 +1032,6 @@ export class ScrumboardComponent implements OnInit {
     }else {
       this.NotificationBox(`Permission Denied! You Can Only Move Task For ${this.loggedUser}`)
     }
-
-    let hidePlaceHolder = document.querySelectorAll('.dragged_item_placeholder')
-    hidePlaceHolder.forEach(element => {
-      element.classList.replace('dragged_item_placeholder_show', 'dragged_item_placeholder_hide')
-    });
-  }
-
-  cdkDragStarted(event: CdkDragStart) {
-    let showPlaceHolder = document.querySelectorAll('.dragged_item_placeholder')
-    showPlaceHolder.forEach(element => {
-      element.classList.replace('dragged_item_placeholder_hide', 'dragged_item_placeholder_show')
-    });
   }
 
   autoHideDialog() {
